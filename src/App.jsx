@@ -1,32 +1,21 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import RegistrationForm from "./components/RegistrationForm";
-import LoginForm from "./components/LoginForm";
-import StudentDashboard from "./components/StudentDashboard";
-import AdminDashboard from "./components/AdminDashboard";
-import CompanyDashboard from "./components/CompanyDashboard";
-import SupervisorDashboard from "./components/SupervisorDashboard";
-import AdvisorDashboard from "./components/AdvisorDashboard";
-import "./App.css";
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
 
 function App() {
-  return (
-    <Router>
-      <div className="text-[40px] text-center mt-6 font-bold text-blue-700">
-        Internship Tracking System
-      </div>
+  const [count, setCount] = useState(0)
 
-      <Routes>
-        <Route path="/" element={<RegistrationForm />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/student-dashboard" element={<StudentDashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/company-dashboard" element={<CompanyDashboard />} />
-        <Route path="/supervisor-dashboard" element={<SupervisorDashboard />} />
-        <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
-      </Routes>
-    </Router>
-  );
+  return (
+    <>
+      
+      <div className="text-[50px] text-center mt-10 font-bold">
+      Internship Tracking System
+    </div>
+         
+      
+    </>
+  )
 }
 
-export default App;
-
+export default App
