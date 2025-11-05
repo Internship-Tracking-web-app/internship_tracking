@@ -5,6 +5,7 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("Student");
   const [error, setError] = useState("");
 
   // Hardcoded admin credentials
@@ -17,37 +18,64 @@ const LoginForm = () => {
     e.preventDefault();
     setError("");
 
-    // Admin login
+    const identifier = (emailOrUsername || "").trim();
+    const normalizedId = identifier.toLowerCase();
+    const pwd = password;
+    const selectedRole = role;
+
+    // Admin login (accept "admin" or "admin@aastu.edu.et") when role is Admin
     if (
-      emailOrUsername === adminCredentials.username &&
-      password === adminCredentials.password
+      selectedRole === "Admin" &&
+      (normalizedId === adminCredentials.username || normalizedId === "admin@aastu.edu.et") &&
+      pwd === adminCredentials.password
     ) {
       navigate("/admin-dashboard");
       return;
     }
 
-    // Student login
-    const students = JSON.parse(localStorage.getItem("students")) || [];
-    const student = students.find(
-      (s) => s.email === emailOrUsername && s.password === password
-    );
+    // Student login (by email or studentId) when role is Student
+    if (selectedRole === "Student") {
+      const students = JSON.parse(localStorage.getItem("students")) || [];
+      const student = students.find((s) => {
+        const email = (s?.email || "").trim().toLowerCase();
+        const sid = (s?.studentId || "").trim().toLowerCase();
+        const pass = s?.password;
+        const idMatches = normalizedId.includes("@")
+          ? email === normalizedId
+          : email === normalizedId || sid === normalizedId;
+        return idMatches && pass === pwd;
+      });
 
-    if (student && student.email.endsWith("@aastu.edu.et")) {
-      navigate("/student-dashboard", { state: { studentName: student.fullName } });
-      return;
+      if (student) {
+        navigate("/student-dashboard", { state: { studentName: student.fullName } });
+        return;
+      }
     }
 
     // Other users login
-    const otherUsers = JSON.parse(localStorage.getItem("otherUsers")) || [];
-    const otherUser = otherUsers.find(
-      (u) => u.username === emailOrUsername && u.password === password
-    );
+    // Other roles via otherUsers: Advisor, Supervisor, Company Representative
+    const roleMap = {
+      "Company Representative": "Company",
+      "Company": "Company",
+      "Advisor": "Advisor",
+      "Supervisor": "Supervisor",
+    };
+    if (["Advisor", "Supervisor", "Company Representative", "Company"].includes(selectedRole)) {
+      const desiredRole = roleMap[selectedRole] || selectedRole;
+      const otherUsers = JSON.parse(localStorage.getItem("otherUsers")) || [];
+      const otherUser = otherUsers.find((u) => {
+        const uname = (u?.username || "").trim().toLowerCase();
+        const pass = u?.password;
+        const roleOk = (u?.role || "") === desiredRole;
+        return uname === normalizedId && pass === pwd && roleOk;
+      });
 
-    if (otherUser) {
-      if (otherUser.role === "Company") navigate("/company-dashboard");
-      else if (otherUser.role === "Supervisor") navigate("/supervisor-dashboard");
-      else if (otherUser.role === "Advisor") navigate("/advisor-dashboard");
-      return;
+      if (otherUser) {
+        if (desiredRole === "Company") navigate("/company-dashboard");
+        else if (desiredRole === "Supervisor") navigate("/supervisor-dashboard");
+        else if (desiredRole === "Advisor") navigate("/advisor-dashboard");
+        return;
+      }
     }
 
     // Invalid credentials
@@ -69,6 +97,23 @@ const LoginForm = () => {
             {error}
           </div>
         )}
+
+        <div className="mb-4">
+          <label className="block text-gray-600 text-sm font-medium mb-1">
+            Role
+          </label>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-400"
+          >
+            <option>Student</option>
+            <option>Advisor</option>
+            <option>Supervisor</option>
+            <option>Company Representative</option>
+            <option>Admin</option>
+          </select>
+        </div>
 
         <div className="mb-4">
           <label className="block text-gray-600 text-sm font-medium mb-1">

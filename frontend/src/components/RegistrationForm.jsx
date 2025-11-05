@@ -27,10 +27,10 @@ const RegistrationForm = () => {
     const { fullName, email, phone, studentId, password, confirmPassword } = formData;
 
     // Email validation
-    if (!email.endsWith("@aastu.edu.et")) {
-      setError("Only AASTU email addresses are allowed.");
-      return;
-    }
+    // if (!email.endsWith("@aastu.edu.et")) {
+    //   setError("Only AASTU email addresses are allowed.");
+    //   return;
+    // }
 
     // Phone validation (digits only, 9–15 characters)
     const phoneRegex = /^[0-9]{9,15}$/;
