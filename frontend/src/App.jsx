@@ -6,6 +6,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import CompanyDashboard from "./components/CompanyDashboard";
 import SupervisorDashboard from "./components/SupervisorDashboard";
 import AdvisorDashboard from "./components/AdvisorDashboard";
+import ExaminerDashboard from "./components/ExaminerDashboard"; // <-- added Examiner
 import LandingPage from "./components/LandingPage";
 import { About } from "./components/About";
 import "./App.css";
@@ -23,6 +24,7 @@ function App() {
         <Route path="/company-dashboard" element={<CompanyDashboard />} />
         <Route path="/supervisor-dashboard" element={<SupervisorDashboard />} />
         <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
+        <Route path="/examiner-dashboard" element={<ExaminerDashboard />} /> {/* <-- Examiner route */}
       </Routes>
     </Router>
   );
