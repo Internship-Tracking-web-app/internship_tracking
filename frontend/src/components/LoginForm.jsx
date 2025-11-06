@@ -139,7 +139,7 @@ const LoginForm = () => {
         <p className="text-sm text-center text-gray-500 mt-4">
           Need to register?{" "}
           <span
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/")}
             className="text-blue-600 hover:underline cursor-pointer"
           >
             Click here
