@@ -4,12 +4,16 @@ import { useNavigate } from "react-router-dom";
 const RegistrationForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    role: "Student", // or 'Company'
     fullName: "",
+    companyName: "",
     email: "",
     phone: "",
     studentId: "",
     password: "",
     confirmPassword: "",
+    documentName: "",
+    documentData: "",
   });
 
   const [error, setError] = useState("");
@@ -19,18 +23,61 @@ const RegistrationForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData((prev) => ({
+        ...prev,
+        documentName: file.name,
+        documentData: reader.result,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    const { fullName, email, phone, studentId, password, confirmPassword } = formData;
+    const {
+      role,
+      fullName,
+      companyName,
+      email,
+      phone,
+      studentId,
+      password,
+      confirmPassword,
+      documentData,
+      documentName,
+    } = formData;
 
-    // Email validation
-    // if (!email.endsWith("@aastu.edu.et")) {
-    //   setError("Only AASTU email addresses are allowed.");
-    //   return;
-    // }
+    // Role-specific validations
+    if (role === "Student") {
+      if (!email.endsWith("@aastu.edu.et")) {
+        setError("Only AASTU email addresses are allowed for students.");
+        return;
+      }
+      if (!studentId) {
+        setError("Student ID is required for student registration.");
+        return;
+      }
+    }
+
+    if (role === "Company") {
+      if (!companyName) {
+        setError("Company name is required for company registration.");
+        return;
+      }
+      // Companies must upload a document for verification
+      if (!documentData) {
+        setError("Please upload a verification document for your company.");
+        return;
+      }
+    }
 
     // Phone validation (digits only, 9–15 characters)
     const phoneRegex = /^[0-9]{9,15}$/;
@@ -45,16 +92,54 @@ const RegistrationForm = () => {
       return;
     }
 
-    // Save student in localStorage
-    const students = JSON.parse(localStorage.getItem("students")) || [];
-    students.push(formData);
-    localStorage.setItem("students", JSON.stringify(students));
+    if (role === "Student") {
+      const students = JSON.parse(localStorage.getItem("students")) || [];
+      students.push({ fullName, email, phone, studentId, password });
+      localStorage.setItem("students", JSON.stringify(students));
 
-    // Show success and redirect to login
-    setSuccess("Registration successful! Redirecting to login...");
-    setTimeout(() => {
-      navigate("/login");
-    }, 1500);
+      // Show success and redirect to login
+      setSuccess("Student registration successful! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+      return;
+    }
+
+    // Company registration: store under 'companies' with verified:false
+    if (role === "Company") {
+      const companies = JSON.parse(localStorage.getItem("companies")) || [];
+      const newCompany = {
+        id: Date.now(),
+        companyName,
+        contactEmail: email,
+        phone,
+        password,
+        verified: false,
+        documentName,
+        documentData,
+        createdAt: new Date().toISOString(),
+      };
+      companies.push(newCompany);
+      localStorage.setItem("companies", JSON.stringify(companies));
+
+      setSuccess(
+        "Company registration submitted. An admin will verify your company before it becomes visible to students."
+      );
+      // do not redirect automatically — let user go to login if they want
+      setFormData({
+        role: "Student",
+        fullName: "",
+        companyName: "",
+        email: "",
+        phone: "",
+        studentId: "",
+        password: "",
+        confirmPassword: "",
+        documentName: "",
+        documentData: "",
+      });
+      return;
+    }
   };
 
   return (
@@ -64,8 +149,26 @@ const RegistrationForm = () => {
         className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md"
       >
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-700">
-          Student Registration
+          {formData.role === "Student"
+            ? "Student Registration"
+            : "Company Registration"}
         </h2>
+
+        {/* Role selector */}
+        <div className="mb-4">
+          <label className="block text-gray-600 text-sm font-medium mb-1">
+            Register as
+          </label>
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="Student">Student</option>
+            <option value="Company">Company</option>
+          </select>
+        </div>
 
         {error && (
           <div className="bg-red-100 text-red-600 p-2 mb-3 rounded-md text-sm">
@@ -78,10 +181,10 @@ const RegistrationForm = () => {
           </div>
         )}
 
-        {/* Full Name */}
+        {/* Full Name or Company Representative / Name */}
         <div className="mb-4">
           <label className="block text-gray-600 text-sm font-medium mb-1">
-            Full Name
+            {formData.role === "Student" ? "Full Name" : "Representative Name"}
           </label>
           <input
             type="text"
@@ -96,16 +199,22 @@ const RegistrationForm = () => {
         {/* Email */}
         <div className="mb-4">
           <label className="block text-gray-600 text-sm font-medium mb-1">
-            AASTU Email
+            {formData.role === "Student"
+              ? "AASTU Email"
+              : "Contact Email (optional)"}
           </label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            required
+            required={formData.role === "Student"}
             className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-400"
-            placeholder="example@aastu.edu.et"
+            placeholder={
+              formData.role === "Student"
+                ? "example@aastu.edu.et"
+                : "contact@company.com"
+            }
           />
         </div>
 
@@ -125,20 +234,55 @@ const RegistrationForm = () => {
           />
         </div>
 
-        {/* Student ID */}
-        <div className="mb-4">
-          <label className="block text-gray-600 text-sm font-medium mb-1">
-            Student ID
-          </label>
-          <input
-            type="text"
-            name="studentId"
-            value={formData.studentId}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
+        {/* Company Name or Student ID */}
+        {formData.role === "Company" ? (
+          <div className="mb-4">
+            <label className="block text-gray-600 text-sm font-medium mb-1">
+              Company Name
+            </label>
+            <input
+              type="text"
+              name="companyName"
+              value={formData.companyName}
+              onChange={handleChange}
+              required
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+        ) : (
+          <div className="mb-4">
+            <label className="block text-gray-600 text-sm font-medium mb-1">
+              Student ID
+            </label>
+            <input
+              type="text"
+              name="studentId"
+              value={formData.studentId}
+              onChange={handleChange}
+              required
+              className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+        )}
+
+        {/* Company verification document upload */}
+        {formData.role === "Company" && (
+          <div className="mb-4">
+            <label className="block text-gray-600 text-sm font-medium mb-1">
+              Verification Document
+            </label>
+            <input
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              onChange={handleFileChange}
+            />
+            {formData.documentName && (
+              <div className="text-sm text-gray-600 mt-1">
+                Uploaded: {formData.documentName}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Password */}
         <div className="mb-4">
