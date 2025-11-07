@@ -39,7 +39,7 @@ class StudentLoginView(APIView):
         refresh = RefreshToken.for_user(user)
 
         try:
-            student = Student.objects.get(email=user.username)
+            student = Student .objects.get(email=user.username)
         except Student.DoesNotExist:
             student = None
 

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -13,14 +15,14 @@ const LoginForm = () => {
     password: "admin123",
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     const identifier = (emailOrUsername || "").trim().toLowerCase();
     const pwd = password;
 
-    // 1️⃣ Admin login
+    // 1️⃣ Admin login (local fallback)
     if (
       (identifier === adminCredentials.username ||
         identifier === "admin@aastu.edu.et") &&
@@ -29,61 +31,25 @@ const LoginForm = () => {
       navigate("/admin-dashboard");
       return;
     }
-
-    // 2️⃣ Student login
-    const students = JSON.parse(localStorage.getItem("students")) || [];
-    const student = students.find((s) => {
-      const email = (s?.email || "").trim().toLowerCase();
-      const sid = (s?.studentId || "").trim().toLowerCase();
-      const pass = s?.password;
-      const idMatches = identifier.includes("@")
-        ? email === identifier
-        : email === identifier || sid === identifier;
-      return idMatches && pass === pwd;
-    });
-
-    if (student) {
-      navigate("/student-dashboard", {
-        state: { studentName: student.fullName },
-      });
+    // Use AuthContext login to integrate with backend
+    try {
+      const { login } = useAuth();
+      const result = await login(identifier, pwd);
+      if (result.ok) {
+        // fetch student name from localStorage (AuthContext stored it)
+        const student = JSON.parse(localStorage.getItem("student"));
+        navigate("/student-dashboard", { state: { studentName: student?.fullName } });
+        return;
+      }
+      setError(result.error?.detail || result.error?.message || "Invalid credentials");
+      return;
+    } catch (e) {
+      // If something unexpected happens
+      setError(e?.message || "Login failed");
       return;
     }
 
-    // 3️⃣ Other roles (Advisor, Supervisor, Company Representative, Company)
-    const otherUsers = JSON.parse(localStorage.getItem("otherUsers")) || [];
-    const otherUser = otherUsers.find((u) => {
-      const uname = (u?.username || "").trim().toLowerCase();
-      const pass = u?.password;
-      return uname === identifier && pass === pwd;
-    });
-
-    if (otherUser) {
-      const role = (otherUser?.role || "").toLowerCase();
-
-      if (role === "advisor") navigate("/advisor-dashboard");
-      else if (role === "supervisor") navigate("/supervisor-dashboard");
-      else if (role === "company" || role === "company representative")
-        navigate("/company-dashboard");
-      else if (role === "examiner") navigate("/examiner-dashboard");
-      return;
-    }
-
-    // 4️⃣ Companies (registered via company registration)
-    const companies = JSON.parse(localStorage.getItem("companies")) || [];
-    const companyUser = companies.find((c) => {
-      const email = (c?.contactEmail || "").trim().toLowerCase();
-      const name = (c?.companyName || "").trim().toLowerCase();
-      const pass = c?.password;
-      return (email === identifier || name === identifier) && pass === pwd;
-    });
-
-    if (companyUser) {
-      navigate("/company-dashboard");
-      return;
-    }
-
-    // ❌ Invalid credentials
-    setError("Invalid username/email or password.");
+    // No local fallbacks — backend auth handled via AuthContext.
   };
 
   return (

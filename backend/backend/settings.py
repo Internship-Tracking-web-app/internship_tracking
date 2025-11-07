@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
     'accounts',
     'corsheaders',
 ]
@@ -161,3 +162,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# CORS settings - during development allow all origins; in production
+# restrict this to your frontend domains (Vercel domain, etc.).
+CORS_ALLOW_ALL_ORIGINS = True
