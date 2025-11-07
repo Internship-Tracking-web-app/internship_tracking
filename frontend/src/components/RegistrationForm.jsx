@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 const RegistrationForm = () => {
   const navigate = useNavigate();
@@ -93,15 +94,30 @@ const RegistrationForm = () => {
     }
 
     if (role === "Student") {
-      const students = JSON.parse(localStorage.getItem("students")) || [];
-      students.push({ fullName, email, phone, studentId, password });
-      localStorage.setItem("students", JSON.stringify(students));
+      // Send registration to backend
+      (async () => {
+        try {
+          const payload = {
+            full_name: fullName,
+            email,
+            password,
+            phone,
+            id_number: studentId,
+            image: null,
+          };
 
-      // Show success and redirect to login
-      setSuccess("Student registration successful! Redirecting to login...");
-      setTimeout(() => {
-        navigate("/login");
-      }, 1500);
+          await api.post("/api/students/register/", payload);
+
+          setSuccess("Student registration successful! Redirecting to login...");
+          setTimeout(() => navigate("/login"), 1400);
+        } catch (err) {
+          const data = err.response?.data || err.message;
+          setError(
+            data?.detail || data?.message || JSON.stringify(data) || "Registration failed"
+          );
+        }
+      })();
+
       return;
     }
 
